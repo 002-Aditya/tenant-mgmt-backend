@@ -1,8 +1,14 @@
 /**
  * Centralized error handling middleware
  */
+const logger = require('./logger');
+
 const errorMiddleware = (err, req, res, next) => {
-    console.error(`[Error] ${err.message}`);
+    logger.error(`[Error] ${err.message}`, {
+        stack: err.stack,
+        originalUrl: req.originalUrl,
+        method: req.method
+    });
 
     const statusCode = err.statusCode || 500;
     const message = err.message || 'Internal Server Error';

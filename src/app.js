@@ -1,7 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const userRoutes = require('./routes/user.routes');
-const errorMiddleware = require('./middlewares/error.middleware');
+const authRoutes = require('./routes/auth');
+const postRoutes = require('./routes/post');
+const getSingleRoutes = require('./routes/getSingle');
+const getAllRoutes = require('./routes/getAll');
+const errorMiddleware = require('./middlewares/error');
 
 const app = express();
 
@@ -9,8 +12,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/api/users', userRoutes);
+// Unauthenticated Routes
+app.use('/api/auth', authRoutes);
+
+// Authenticated separated routes
+// Order matters: postRoutes has /:model/lov so it should go before getSingleRoutes (/model/:id)
+app.use('/api', postRoutes);
+app.use('/api', getAllRoutes);
+app.use('/api', getSingleRoutes);
 
 // Root Endpoint
 app.get('/', (req, res) => {
