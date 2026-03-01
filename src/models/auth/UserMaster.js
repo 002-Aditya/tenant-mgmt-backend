@@ -52,7 +52,7 @@ const User = sequelize.define(
     },
     genderId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: {
           tableName: "gender",
@@ -61,7 +61,6 @@ const User = sequelize.define(
         key: "gender_id",
       },
       validate: {
-        notNull: { msg: "Gender mapping is required." },
         isUUID: {
           args: 4,
           msg: "Gender must be a valid UUID mapping.",
