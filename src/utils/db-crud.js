@@ -57,6 +57,41 @@ class DbCrudService {
   }
 
   /**
+   * Find a record or create it if it doesn't exist
+   * @param {Object} model - Sequelize model
+   * @param {Object} conditions - Where conditions to search for
+   * @param {Object} defaults - Default values to use if creating
+   * @param {Object} [transaction=null] - Optional Sequelize transaction
+   * @returns {Promise<Object>} Formatted response with statusCode 200 (found) or 201 (created)
+   */
+  static async findOrCreate(model, conditions, defaults, transaction = null) {
+    try {
+      const [record, created] = await model.findOrCreate({
+        where: conditions,
+        defaults: defaults,
+        transaction,
+      });
+      return this._success(created ? 201 : 200, record);
+    } catch (error) {
+      if (
+        error.name === "SequelizeValidationError" ||
+        error.name === "SequelizeUniqueConstraintError"
+      ) {
+        return this._error(
+          400,
+          "Validation Error: ",
+          error.errors ? error.errors.map((e) => e.message) : error.message,
+        );
+      }
+      return this._error(
+        500,
+        `Error in findOrCreate for ${model.name}`,
+        error.message,
+      );
+    }
+  }
+
+  /**
    * Bulk create multiple records
    * @param {Object} model - Sequelize model
    * @param {Array<Object>} dataArray - Array of data objects to insert

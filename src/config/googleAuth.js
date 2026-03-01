@@ -1,10 +1,28 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth2").Strategy;
-const logger = require("../middlewares/logger"); // Adjusting to the real logger path
+const logger = require("../middlewares/logger");
+const AuthService = require("../services/auth.service");
 
 const setupGoogleAuth = (app) => {
-  const authUser = (request, accessToken, refreshToken, profile, done) => {
-    return done(null, profile);
+  const authUser = async (
+    request,
+    accessToken,
+    refreshToken,
+    profile,
+    done,
+  ) => {
+    try {
+      const response = await AuthService.handleGoogleSSOLogin(profile);
+
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      return done(null, response.data);
+    } catch (error) {
+      logger.error("Error in Google Strategy:", error);
+      return done(error, null);
+    }
   };
 
   passport.use(
@@ -82,7 +100,9 @@ const setupGoogleAuth = (app) => {
 
       // Check if redirectBase already has query params
       const separator = redirectBase.includes("?") ? "&" : "?";
-      const redirectUrl = `${redirectBase}${separator}success=true&userId=${user.id || user.sub}`;
+      // Since we now save to DB, the PK is userId
+      const userId = user.userId || user.id || user.sub;
+      const redirectUrl = `${redirectBase}${separator}success=true&userId=${userId}`;
       res.redirect(redirectUrl);
     },
   );

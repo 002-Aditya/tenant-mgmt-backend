@@ -22,6 +22,15 @@ const User = sequelize.define(
         isEmail: { msg: "Please provide a valid email address format." },
       },
     },
+    photo: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      validate: {
+        isUrl: {
+          msg: "Photo must be a valid URL.",
+        },
+      },
+    },
     firstName: {
       type: DataTypes.STRING(200),
       allowNull: false,
@@ -70,9 +79,8 @@ const User = sequelize.define(
     },
     roleId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
       validate: {
-        notNull: { msg: "Role mapping is required." },
         isUUID: {
           args: 4,
           msg: "Role must be a valid UUID mapping.",
