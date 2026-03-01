@@ -4,8 +4,6 @@ const logger = require("../middlewares/logger"); // Adjusting to the real logger
 
 const setupGoogleAuth = (app) => {
   const authUser = (request, accessToken, refreshToken, profile, done) => {
-    // Here you would typically find or create the user in your database
-    // For now, we simply pass the Google profile through
     return done(null, profile);
   };
 
@@ -13,10 +11,10 @@ const setupGoogleAuth = (app) => {
     new GoogleStrategy(
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_SECRET_ID, // Matches the .env variable GOOGLE_SECRET_ID
+        clientSecret: process.env.GOOGLE_SECRET_ID,
         callbackURL: process.env.BACKEND_URL
           ? `${process.env.BACKEND_URL}/auth/google/callback`
-          : `http://127.0.0.1:${process.env.PORT || 3000}/auth/google/callback`,
+          : `http://localhost:${process.env.PORT || 3000}/auth/google/callback`,
         passReqToCallback: true,
       },
       authUser,
@@ -67,9 +65,11 @@ const setupGoogleAuth = (app) => {
     (req, res) => {
       // Successful authentication
       const user = req.user;
+      const stringifiedUser = JSON.stringify(user);
+      console.log("User: ", stringifiedUser);
 
       // Determine the redirect URL from the state parameter passed earlier
-      let redirectBase = process.env.APP_URL || "http://127.0.0.1:8081";
+      let redirectBase = process.env.APP_URL || "http://localhost:8081";
       if (req.query.state) {
         try {
           redirectBase = Buffer.from(req.query.state, "base64").toString(
