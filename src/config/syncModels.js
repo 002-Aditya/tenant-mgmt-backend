@@ -3,7 +3,10 @@
  * Add any new models to the `modelsToSync` array to have them synchronized during database connection.
  */
 const syncAllModels = async () => {
-  const modelsToSync = [require("../models/auth/UserMaster")];
+  const modelsToSync = [
+    require("../models/auth/UserMaster"),
+    require("../models/notification/OtpMaster"),
+  ];
 
   const shouldAlter = process.env.SYNC_ALTER === "true";
 

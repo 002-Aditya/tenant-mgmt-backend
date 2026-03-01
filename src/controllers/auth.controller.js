@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const User = require('../models/user.model');
+const User = require('../models/auth/UserMaster');
 const logger = require('../middlewares/logger');
 
 class AuthController {
