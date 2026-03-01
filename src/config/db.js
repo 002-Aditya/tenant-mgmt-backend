@@ -82,7 +82,7 @@ const connectDB = async () => {
     console.log("PostgreSQL (Sequelize) connected successfully.");
 
     // Ensure schemas from an array exist
-    const defaultSchemas = ["public", "auth", "notification"];
+    const defaultSchemas = ["public", "auth", "notification", "lov"];
     await createSchemasIfNotExist(defaultSchemas);
 
     // Fine-grained model synchronization

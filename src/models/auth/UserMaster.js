@@ -50,16 +50,24 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    gender: {
-      type: DataTypes.ENUM("M", "F", "O"),
+    genderId: {
+      type: DataTypes.UUID,
       allowNull: false,
+      references: {
+        model: {
+          tableName: "gender",
+          schema: "lov",
+        },
+        key: "gender_id",
+      },
       validate: {
-        notNull: { msg: "Gender is required." },
-        isIn: {
-          args: [["M", "F", "O"]],
-          msg: "Gender must be one of: M, F, O.",
+        notNull: { msg: "Gender mapping is required." },
+        isUUID: {
+          args: 4,
+          msg: "Gender must be a valid UUID mapping.",
         },
       },
+      comment: "Foreign Key to Gender LOV",
     },
     roleId: {
       type: DataTypes.UUID,
@@ -75,14 +83,12 @@ const User = sequelize.define(
     },
     contactNumber: {
       type: DataTypes.STRING(10),
-      allowNull: false,
+      allowNull: true,
       unique: {
         name: "uq_users_contact_number",
         msg: "This contact number is already registered.",
       },
       validate: {
-        notNull: { msg: "Contact number is required." },
-        notEmpty: { msg: "Contact number cannot be empty." },
         isNumeric: {
           msg: "Contact number must contain only numeric digits.",
         },
@@ -91,6 +97,10 @@ const User = sequelize.define(
           msg: "Contact number must be exactly 10 digits.",
         },
       },
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
     createdOn: {
       type: DataTypes.DATE,
@@ -103,7 +113,7 @@ const User = sequelize.define(
     },
     isActive: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true,
+      defaultValue: false,
     },
   },
   {
@@ -114,26 +124,52 @@ const User = sequelize.define(
     comment:
       "Will be storing user's information on the basis of their role i.e., Admin/Tenant.",
     indexes: [
+      // UNIQUE INDEXES
       {
-        name: "idx_users_email",
+        name: "uq_user_master_email",
         fields: ["email"],
         unique: true,
       },
       {
-        name: "idx_users_contact_number",
+        name: "uq_user_master_contact_number",
         fields: ["contact_number"],
         unique: true,
       },
+
+      // FOREIGN KEY INDEX
       {
-        name: "idx_users_role_id",
+        name: "idx_user_master_role_id",
         fields: ["role_id"],
       },
+
+      // STATUS FILTER INDEXES
       {
-        name: "idx_users_is_active",
+        name: "idx_user_master_is_active",
         fields: ["is_active"],
+      },
+      {
+        name: "idx_user_master_is_verified",
+        fields: ["is_verified"],
+      },
+
+      // COMPOSITE INDEXES (VERY IMPORTANT)
+      {
+        name: "idx_user_master_email_active_verified",
+        fields: ["email", "is_active", "is_verified"],
+      },
+      {
+        name: "idx_user_master_role_active_verified",
+        fields: ["role_id", "is_active", "is_verified"],
       },
     ],
   },
 );
+
+// We define the association dynamically to prevent circular dependencies at load time
+User.associate = (models) => {
+  if (models.Gender) {
+    User.belongsTo(models.Gender, { foreignKey: "gender_id" });
+  }
+};
 
 module.exports = User;
