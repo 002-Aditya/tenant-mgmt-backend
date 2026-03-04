@@ -14,7 +14,7 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Added for passport body paring if needed
+app.use(express.urlencoded({ extended: true }));
 
 // Session Configuration & Passport SSO
 app.use(
@@ -22,12 +22,15 @@ app.use(
     secret: process.env.SESSION_SECRET || "fallback-secret-key-123",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+    cookie: { maxAge: 24 * 60 * 60 * 1000 },
   }),
 );
 
-// Initialize Google Auth configurations and its routes
 setupGoogleAuth(app);
+
+// Mount separated Google Auth routes
+const googleAuthRoutes = require("./routes/googleAuth.routes");
+app.use("/", googleAuthRoutes);
 
 // Unauthenticated API Routes
 app.use("/api/auth", authRoutes);
