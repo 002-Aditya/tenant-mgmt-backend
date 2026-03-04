@@ -12,10 +12,21 @@ const setupGoogleAuth = (app) => {
     done,
   ) => {
     try {
-      const response = await AuthService.handleGoogleSSOLogin(profile);
+      // Pluck the saved location and device object bound onto the session earlier
+      const metadata = request.session?.oauthMetadata || null;
+
+      const response = await AuthService.handleGoogleSSOLogin(
+        profile,
+        metadata,
+      );
 
       if (!response.success) {
         throw new Error(response.error);
+      }
+
+      // Cleanup to prevent phantom data
+      if (request.session) {
+        request.session.oauthMetadata = null;
       }
 
       return done(null, response.data);
@@ -59,10 +70,29 @@ const setupGoogleAuth = (app) => {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  app.get("/auth/google", (req, res, next) => {
+  // Import our shiny new parser
+  const { parseFormData } = require("../utils/formDataParser");
+
+  app.post("/auth/google", parseFormData.none(), (req, res, next) => {
+    req.session.oauthMetadata = req.body || {};
+
     const stateString = req.query.redirectUrl
       ? Buffer.from(req.query.redirectUrl).toString("base64")
       : undefined;
+
+    passport.authenticate("google", {
+      scope: ["email", "profile"],
+      state: stateString,
+    })(req, res, next);
+  });
+
+  app.get("/auth/google", (req, res, next) => {
+    req.session.oauthMetadata = null;
+
+    const stateString = req.query.redirectUrl
+      ? Buffer.from(req.query.redirectUrl).toString("base64")
+      : undefined;
+
     passport.authenticate("google", {
       scope: ["email", "profile"],
       state: stateString,
