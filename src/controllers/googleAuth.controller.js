@@ -1,8 +1,6 @@
 const passport = require("passport");
 
 exports.postGoogleAuth = (req, res, next) => {
-  // Safely stash the mapped multipart/form-data body into the session
-  // This allows it to persist across the google OAuth bounds natively.
   req.session.oauthMetadata = req.body || {};
 
   const stateString = req.query.redirectUrl
@@ -50,9 +48,7 @@ exports.googleAuthCallback = (req, res, next) => {
       }
     }
 
-    // Check if redirectBase already has query params
     const separator = redirectBase.includes("?") ? "&" : "?";
-    // Since we now save to DB, the PK is userId
     const userId = user.userId || user.id || user.sub;
     const redirectUrl = `${redirectBase}${separator}success=true&userId=${userId}`;
     res.redirect(redirectUrl);

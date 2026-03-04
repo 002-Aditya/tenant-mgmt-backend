@@ -11,6 +11,8 @@ class AuthService {
    * @returns {Promise<Object>} Formatted response with success status and user data
    */
   static async handleGoogleSSOLogin(profile, metadata = null) {
+    console.log('Profile : ', profile);
+    console.log('Metadata : ', metadata);
     try {
       const email =
         profile.emails && profile.emails.length > 0
