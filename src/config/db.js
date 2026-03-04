@@ -85,6 +85,10 @@ const connectDB = async () => {
     const defaultSchemas = ["public", "auth", "notification", "lov"];
     await createSchemasIfNotExist(defaultSchemas);
 
+    // Create extensions
+    const { createExtensionsIfNotExist } = require("./db-extension");
+    await createExtensionsIfNotExist(sequelize);
+
     // Fine-grained model synchronization
     const syncAllModels = require("./syncModels");
     await syncAllModels();

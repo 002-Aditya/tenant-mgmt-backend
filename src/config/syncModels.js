@@ -15,6 +15,8 @@ const syncAllModels = async () => {
     require("../models/lov/Gender"),
     require("../models/auth/UserMaster"),
     require("../models/notification/OtpMaster"),
+    require("../models/auth/DeviceDetails"),
+    require("../models/auth/GeolocationDetails"),
   ];
 
   const shouldAlter = process.env.SYNC_ALTER === "true";
