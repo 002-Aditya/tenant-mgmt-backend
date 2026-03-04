@@ -41,17 +41,28 @@ class AuthService {
       );
 
       // If user persistence was successful, and we have form-data metadata, write that too
-      if (response.success && metadata) {
+      if (response.success && metadata && metadata.updateMap) {
         const userId = response.data.user_id;
 
+        let parsedMetadata = {};
+        try {
+          parsedMetadata = JSON.parse(metadata.updateMap);
+        } catch (error) {
+          console.error("Failed to parse updateMap JSON:", error.message);
+        }
+
         // Persist Device Details asynchronously
-        if (metadata.os || metadata.osVersion || metadata.browser) {
+        if (
+          parsedMetadata.os ||
+          parsedMetadata.osVersion ||
+          parsedMetadata.browser
+        ) {
           const DeviceDetails = require("../models/auth/DeviceDetails");
           DbCrudService.create(DeviceDetails, {
             userId,
-            os: metadata.os || "Unknown",
-            osVersion: metadata.osVersion || "Unknown",
-            browser: metadata.browser || "Unknown",
+            os: parsedMetadata.os || "Unknown",
+            osVersion: parsedMetadata.osVersion || "Unknown",
+            browser: parsedMetadata.browser || "Unknown",
           }).catch((err) =>
             console.error(
               "Failed to persist Google SSO device metadata:",
@@ -62,7 +73,7 @@ class AuthService {
 
         // Persist Geospatial Details asynchronously
         const { country, region, timezone, city, latitude, longitude, area } =
-          metadata;
+          parsedMetadata;
         if (country && city && latitude && longitude) {
           const GeolocationDetails = require("../models/auth/GeolocationDetails");
           DbCrudService.create(GeolocationDetails, {
