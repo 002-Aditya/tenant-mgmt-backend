@@ -1,18 +1,17 @@
+/**
+ * Handles the persistence of a Google SSO User Profile.
+ * Extracts necessary fields and performs a findOrCreate operation on the UserMaster model.
+ *
+ * @param {Object} profile - The Google OAuth profile object
+ * @param {Object} [metadata] - Optional Device and Geolocation Form Data Payload
+ * @returns {Promise<Object>} Formatted response with success status and user data
+ */
+
 const DbCrudService = require("../utils/db-crud");
 const User = require("../models/auth/UserMaster");
 
 class AuthService {
-  /**
-   * Handles the persistence of a Google SSO User Profile.
-   * Extracts necessary fields and performs a findOrCreate operation on the UserMaster model.
-   *
-   * @param {Object} profile - The Google OAuth profile object
-   * @param {Object} [metadata] - Optional Device and Geolocation Form Data Payload
-   * @returns {Promise<Object>} Formatted response with success status and user data
-   */
   static async handleGoogleSSOLogin(profile, metadata = null) {
-    console.log('Profile : ', profile);
-    console.log('Metadata : ', metadata);
     try {
       const email =
         profile.emails && profile.emails.length > 0
@@ -42,59 +41,50 @@ class AuthService {
         },
       );
 
-      // If user persistence was successful, and we have form-data metadata, write that too
-      if (response.success && metadata && metadata.updateMap) {
-        const userId = response.data.user_id;
+      if (metadata.updateMap) {
+        const userId = response.data.userId || response.data.id;
 
-        let parsedMetadata = {};
-        try {
-          parsedMetadata = JSON.parse(metadata.updateMap);
-        } catch (error) {
-          console.error("Failed to parse updateMap JSON:", error.message);
+        const parsedMetadata = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
+        let updateMapObject = parsedMetadata.updateMap;
+
+        if (typeof updateMapObject === "string") {
+          updateMapObject = JSON.parse(updateMapObject);
         }
 
-        // Persist Device Details asynchronously
+        // --- 1. Device Details ---
         if (
-          parsedMetadata.os ||
-          parsedMetadata.osVersion ||
-          parsedMetadata.browser
+          updateMapObject.os ||
+          updateMapObject.osVersion ||
+          updateMapObject.deviceModel
         ) {
           const DeviceDetails = require("../models/auth/DeviceDetails");
-          DbCrudService.create(DeviceDetails, {
-            userId,
-            os: parsedMetadata.os || "Unknown",
-            osVersion: parsedMetadata.osVersion || "Unknown",
-            browser: parsedMetadata.browser || "Unknown",
-          }).catch((err) =>
-            console.error(
-              "Failed to persist Google SSO device metadata:",
-              err.error || err.message,
-            ),
-          );
+
+          const device = await DbCrudService.create(DeviceDetails, {
+            userId: userId,
+            os: updateMapObject.os || "Unknown",
+            osVersion: updateMapObject.osVersion || "Unknown",
+            browser: updateMapObject.deviceModel || "Unknown",
+          });
         }
 
-        // Persist Geospatial Details asynchronously
-        const { country, region, timezone, city, latitude, longitude, area } =
-          parsedMetadata;
-        if (country && city && latitude && longitude) {
+        // --- 2. Geolocation Details ---
+        const { latitude, longitude } = updateMapObject;
+
+        if (latitude !== undefined && longitude !== undefined) {
           const GeolocationDetails = require("../models/auth/GeolocationDetails");
-          DbCrudService.create(GeolocationDetails, {
-            userId,
-            country,
-            region: region || "Unknown",
-            timezone: timezone || "Unknown",
-            city,
+
+          await DbCrudService.create(GeolocationDetails, {
+            userId: userId,
+            country: "Unknown",
+            region: "Unknown",
+            timezone: "Unknown",
+            city: "Unknown",
             latitudeLongitude: {
               type: "Point",
-              coordinates: [parseFloat(longitude), parseFloat(latitude)],
+              coordinates: [Number(longitude), Number(latitude)],
             },
-            area: area ? parseInt(area, 10) : null,
-          }).catch((err) =>
-            console.error(
-              "Failed to persist Google SSO geolocation metadata:",
-              err.error || err.message,
-            ),
-          );
+            area: null,
+          });
         }
       }
 

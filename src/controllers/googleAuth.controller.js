@@ -14,12 +14,14 @@ exports.postGoogleAuth = (req, res, next) => {
 };
 
 exports.getGoogleAuth = (req, res, next) => {
-  // Ensure we flush any old lingering session data
-  req.session.oauthMetadata = null;
+  // Combine redirectUrl and updateMap into a single state object
+  const stateObj = {
+    redirectUrl: req.query.redirectUrl || null,
+    updateMap: req.query.updateMap ? JSON.parse(req.query.updateMap) : null
+  };
 
-  const stateString = req.query.redirectUrl
-    ? Buffer.from(req.query.redirectUrl).toString("base64")
-    : undefined;
+  // Convert the object to a Base64 string for safe transport
+  const stateString = Buffer.from(JSON.stringify(stateObj)).toString("base64");
 
   passport.authenticate("google", {
     scope: ["email", "profile"],
@@ -27,12 +29,7 @@ exports.getGoogleAuth = (req, res, next) => {
   })(req, res, next);
 };
 
-exports.helloWorld = (req, res) => {
-  res.send(
-    `<h1>Google Authentication Required</h1><a href="/auth/google">Login Here</a>`,
-  );
-};
-
+// Update the callback to decode the JSON state object
 exports.googleAuthCallback = (req, res, next) => {
   passport.authenticate("google", {
     failureRedirect: "/helloWorld",
@@ -40,9 +37,15 @@ exports.googleAuthCallback = (req, res, next) => {
     const user = req.user;
 
     let redirectBase = process.env.APP_URL;
+    
+    // Decode the state to get the redirectUrl back
     if (req.query.state) {
       try {
-        redirectBase = Buffer.from(req.query.state, "base64").toString("ascii");
+        const decodedState = Buffer.from(req.query.state, "base64").toString("ascii");
+        const stateObj = JSON.parse(decodedState);
+        if (stateObj.redirectUrl) {
+           redirectBase = stateObj.redirectUrl;
+        }
       } catch (e) {
         console.error("Failed to parse state", e);
       }
@@ -53,6 +56,12 @@ exports.googleAuthCallback = (req, res, next) => {
     const redirectUrl = `${redirectBase}${separator}success=true&userId=${userId}`;
     res.redirect(redirectUrl);
   });
+};
+
+exports.helloWorld = (req, res) => {
+  res.send(
+    `<h1>Google Authentication Required</h1><a href="/auth/google">Login Here</a>`,
+  );
 };
 
 // Middleware to check if user is authenticated

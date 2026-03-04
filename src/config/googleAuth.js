@@ -12,21 +12,30 @@ const setupGoogleAuth = (app) => {
     done,
   ) => {
     try {
-      // Pluck the saved location and device object bound onto the session earlier
-      const metadata = request.session?.oauthMetadata || null;
+      let metadata = null;
+
+      // Intercept the state parameter returning from Google
+      if (request.query.state) {
+        try {
+          const decodedState = Buffer.from(request.query.state, 'base64').toString('ascii');
+          const stateObj = JSON.parse(decodedState);
+          
+          // Reconstruct the metadata object how auth.service.js expects it
+          if (stateObj.updateMap) {
+            metadata = { updateMap: JSON.stringify(stateObj.updateMap) };
+          }
+        } catch (e) {
+          logger.error("Failed to parse state metadata in Strategy:", e);
+        }
+      }
 
       const response = await AuthService.handleGoogleSSOLogin(
         profile,
-        metadata,
+        metadata, // Now successfully passing the extracted data
       );
 
       if (!response.success) {
         throw new Error(response.error);
-      }
-
-      // Cleanup to prevent phantom data
-      if (request.session) {
-        request.session.oauthMetadata = null;
       }
 
       return done(null, response.data);
