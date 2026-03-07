@@ -1,14 +1,13 @@
 const passport = require("passport");
+const logger = require("../../middlewares/logger");
 
 exports.postGoogleAuth = (req, res, next) => {
-  req.session.oauthMetadata = req.body || {};
+  req.session.oauthMetadata = {};
 
-  const stateString = req.query.redirectUrl
-    ? Buffer.from(req.query.redirectUrl).toString("base64")
-    : undefined;
+  const stateString = req.query.redirectUrl ? Buffer.from(req.query.redirectUrl).toString("base64") : undefined;
 
   passport.authenticate("google", {
-    scope: ["email", "profile"],
+    scope: ["email", "profile", "openid"],
     state: stateString,
   })(req, res, next);
 };
@@ -24,7 +23,7 @@ exports.getGoogleAuth = (req, res, next) => {
   const stateString = Buffer.from(JSON.stringify(stateObj)).toString("base64");
 
   passport.authenticate("google", {
-    scope: ["email", "profile"],
+    scope: ["email", "profile", "openid"],
     state: stateString,
   })(req, res, next);
 };
@@ -32,10 +31,8 @@ exports.getGoogleAuth = (req, res, next) => {
 // Update the callback to decode the JSON state object
 exports.googleAuthCallback = (req, res, next) => {
   passport.authenticate("google", {
-    failureRedirect: "/helloWorld",
+    failureRedirect: process.env.APP_URL,
   })(req, res, () => {
-    const user = req.user;
-
     let redirectBase = process.env.APP_URL;
     
     // Decode the state to get the redirectUrl back
@@ -47,30 +44,12 @@ exports.googleAuthCallback = (req, res, next) => {
            redirectBase = stateObj.redirectUrl;
         }
       } catch (e) {
-        console.error("Failed to parse state", e);
+        logger.error("Failed to parse state", e);
       }
     }
 
     const separator = redirectBase.includes("?") ? "&" : "?";
-    const userId = user.userId || user.id || user.sub;
-    const redirectUrl = `${redirectBase}${separator}success=true&userId=${userId}`;
+    const redirectUrl = `${redirectBase}${separator}success=true`;
     res.redirect(redirectUrl);
   });
-};
-
-exports.helloWorld = (req, res) => {
-  res.send(
-    `<h1>Google Authentication Required</h1><a href="/auth/google">Login Here</a>`,
-  );
-};
-
-// Middleware to check if user is authenticated
-exports.checkAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) return next();
-  res.redirect("/helloWorld");
-};
-
-exports.inside = (req, res) => {
-  const userName = req.user.displayName;
-  res.send(`<h1>Successfully logged in! Welcome ${userName}</h1>`);
 };

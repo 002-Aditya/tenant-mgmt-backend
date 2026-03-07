@@ -1,26 +1,11 @@
 const express = require("express");
 const googleAuthController = require("../controllers/auth/google-login");
-const { parseFormData } = require("../utils/formDataParser");
+const { parseFormData } = require("../middlewares/formDataParser");
 
 const router = express.Router();
 
-router.post(
-  "/auth/google",
-  parseFormData.none(),
-  googleAuthController.postGoogleAuth,
-);
-
+router.post("/auth/google", parseFormData, googleAuthController.postGoogleAuth);
 router.get("/auth/google", googleAuthController.getGoogleAuth);
-
-router.get("/helloWorld", googleAuthController.helloWorld);
-
 router.get("/auth/google/callback", googleAuthController.googleAuthCallback);
-
-// Protected Route Example
-router.get(
-  "/inside",
-  googleAuthController.checkAuthenticated,
-  googleAuthController.inside,
-);
 
 module.exports = router;

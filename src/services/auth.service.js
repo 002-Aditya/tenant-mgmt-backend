@@ -1,6 +1,6 @@
 /**
  * Handles the persistence of a Google SSO User Profile.
- * Extracts necessary fields and performs a findOrCreate operation on the UserMaster model.
+ * Extracts the necessary fields and performs a findOrCreate operation on the UserMaster model.
  *
  * @param {Object} profile - The Google OAuth profile object
  * @param {Object} [metadata] - Optional Device and Geolocation Form Data Payload
