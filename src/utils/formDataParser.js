@@ -8,11 +8,10 @@ if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
 
-// Multer diskStorage configuration
+// Multer - file storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Store temporarily. Files should be uploaded directly to S3 or processed
-    // and then deleted from this temp folder.
+    // Store temporarily. Files should be uploaded directly to S3 or processed and then deleted from this temp folder.
     cb(null, tempDir);
   },
   filename: (req, file, cb) => {
@@ -28,7 +27,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    // Limit file size to 10MB by default
+    // File size limit (10 MB)
     fileSize: 10 * 1024 * 1024,
   },
 });
@@ -54,21 +53,10 @@ const handleUploadError = (uploadMiddleware) => {
   return (req, res, next) => {
     uploadMiddleware(req, res, (err) => {
       if (err instanceof multer.MulterError) {
-        // A Multer error occurred when uploading (e.g. file too large)
-        return res.status(400).json({
-          status: "error",
-          message: "File upload error",
-          error: err.message,
-        });
+        return res.status(400).json({ status: "error",  message: err.message, statusCode: 500 });
       } else if (err) {
-        // An unknown error occurred when uploading
-        return res.status(500).json({
-          status: "error",
-          message: "Internal server error during file upload",
-          error: err.message,
-        });
+        return res.status(500).json({ status: "error", message: "Internal server error during file upload", error: err.message });
       }
-      // Everything went fine
       next();
     });
   };

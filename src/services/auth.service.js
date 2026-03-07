@@ -7,7 +7,7 @@
  * @returns {Promise<Object>} Formatted response with success status and user data
  */
 
-const DbCrudService = require("../utils/db-crud");
+const DbCrudService = require("./db-crud");
 const User = require("../models/auth/UserMaster");
 
 class AuthService {

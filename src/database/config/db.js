@@ -1,5 +1,6 @@
 const { Sequelize } = require("sequelize");
 const { Client } = require("pg");
+const logger = require('../../middlewares/logger');
 require("dotenv").config();
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
@@ -23,14 +24,14 @@ const createDatabaseIfNotExists = async () => {
       [DB_NAME],
     );
     if (res.rowCount === 0) {
-      console.log(`Database "${DB_NAME}" does not exist. Creating...`);
+      logger.info(`Database "${DB_NAME}" does not exist. Creating...`);
       await client.query(`CREATE DATABASE "${DB_NAME}"`);
-      console.log(`Database "${DB_NAME}" created successfully.`);
+      logger.info(`Database "${DB_NAME}" created successfully.`);
     } else {
-      console.log(`Database "${DB_NAME}" already exists.`);
+      logger.info(`Database "${DB_NAME}" already exists.`);
     }
   } catch (error) {
-    console.error("Error ensuring database exists:", error.message);
+    logger.error("Error ensuring database exists:", error.message);
     throw error;
   } finally {
     await client.end();
@@ -62,10 +63,10 @@ const createSchemasIfNotExist = async (schemas) => {
   try {
     for (const schema of schemas) {
       await sequelize.query(`CREATE SCHEMA IF NOT EXISTS "${schema}";`);
-      console.log(`Schema "${schema}" ensured to exist.`);
+      logger.info(`Schema "${schema}" ensured to exist.`);
     }
   } catch (error) {
-    console.error("Error creating schemas:", error.message);
+    logger.error("Error creating schemas:", error.message);
     throw error;
   }
 };
@@ -77,25 +78,25 @@ const connectDB = async () => {
   try {
     await createDatabaseIfNotExists();
 
-    // Test the basic connection
+    // Testing Database Connection
     await sequelize.authenticate();
     console.log("PostgreSQL (Sequelize) connected successfully.");
 
-    // Ensure schemas from an array exist
+    // Creating schemas
     const defaultSchemas = ["public", "auth", "notification", "lov"];
     await createSchemasIfNotExist(defaultSchemas);
 
-    // Create extensions
+    // Creating extensions
     const { createExtensionsIfNotExist } = require("./db-extension");
     await createExtensionsIfNotExist(sequelize);
 
-    // Fine-grained model synchronization
+    // Syncing models
     const syncAllModels = require("./syncModels");
     await syncAllModels();
   } catch (error) {
-    console.error("Unable to connect to the database:", error.message);
+    logger.error("Unable to connect to the database:", error.message);
     process.exit(1);
   }
 };
 
-module.exports = { sequelize, connectDB, createSchemasIfNotExist };
+module.exports = { sequelize, connectDB };

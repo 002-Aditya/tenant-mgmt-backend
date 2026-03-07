@@ -1,4 +1,5 @@
-const DbCrudService = require("../utils/db-crud");
+const DbCrudService = require("../../services/db-crud");
+const logger = require('../../middlewares/logger');
 
 /**
  * Generic function to seed initial bulk data if the model's table is entirely empty.
@@ -12,25 +13,15 @@ const seedInitialData = async (model, data) => {
       const response = await DbCrudService.bulkCreate(model, data);
 
       if (response.success) {
-        console.log(
-          `Successfully seeded initial data for model "${model.name}".`,
-        );
+        logger.info(`Successfully seeded initial data for model "${model.name}".`);
       } else {
-        console.error(
-          `Failed to seed data for model "${model.name}":`,
-          response.error,
-        );
+        logger.error(`Failed to seed data for model "${model.name}":`, response.error);
       }
     } else {
-      console.log(
-        `Model "${model.name}" already contains data, skipping seed.`,
-      );
+      logger.info(`Model "${model.name}" already contains data, skipping seed.`,);
     }
   } catch (error) {
-    console.error(
-      `Error executing seed check for model "${model.name}":`,
-      error.message,
-    );
+    logger.error(`Error executing seed check for model "${model.name}":`, error.message,);
   }
 };
 

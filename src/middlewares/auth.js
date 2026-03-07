@@ -12,8 +12,7 @@ const authenticateToken = (req, res, next) => {
     }
 
     try {
-        const verified = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key');
-        req.user = verified;
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
         next();
     } catch (error) {
         logger.error(`Authentication failed: Invalid token - ${error.message}`);

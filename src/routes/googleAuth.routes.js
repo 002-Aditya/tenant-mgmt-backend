@@ -1,5 +1,5 @@
 const express = require("express");
-const googleAuthController = require("../controllers/googleAuth.controller");
+const googleAuthController = require("../controllers/auth/google-login");
 const { parseFormData } = require("../utils/formDataParser");
 
 const router = express.Router();
